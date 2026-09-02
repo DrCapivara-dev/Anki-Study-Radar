@@ -1,0 +1,1 @@
+263f4578d1e374c5c83ebe20a16dcc3334afe47b9fa5c1468ff85beee656d5b5  releases/Anki_Study_Radar_v0.1.1.ankiaddon

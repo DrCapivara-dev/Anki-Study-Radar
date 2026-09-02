@@ -1,0 +1,7 @@
+{
+  "history_days": 730,
+  "max_rows": 8,
+  "minimum_session_reviews": 5,
+  "base_intervals_days": [2, 4, 7, 14, 21, 30, 45, 60],
+  "show_upcoming_days": 5
+}
