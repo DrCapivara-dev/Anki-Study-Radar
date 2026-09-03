@@ -1,17 +1,16 @@
-Anki Study Radar v1.3.0
+Anki Study Radar v1.3.1 — Production
 
 Radar inteligente de revisão temática para Anki Desktop.
 
-Novidades v1.3.0:
+Novidades v1.3.1:
+- Primeira build pública apontando para o backend comercial de produção.
+- Checkout real do Mercado Pago via backend seguro.
 - Conta Study Radar por e-mail e senha.
-- Senha nunca é salva no Anki; o add-on guarda somente um token de sessão.
-- Compra Pro vinculada à conta conectada.
-- Study Radar Pro Lifetime limitado a 1 dispositivo por vez.
-- Login em um computador que já possui a licença permite ativar o Pro sem digitar a chave.
-- Desativar este PC libera a vaga para outro computador.
-- Alteração de senha dentro da Central Study Radar.
-- Chave SR-PRO continua disponível para suporte/recuperação.
-- Compatibilidade mantida com a chave OWNER e com ativações manuais antigas.
+- Pro Lifetime vinculado à conta e limitado a 1 dispositivo por vez.
+- Migração segura: dados comerciais locais do antigo ambiente de teste são descartados na atualização, evitando misturar testes com produção.
+- A chave OWNER offline é preservada.
+- A senha nunca é salva no Anki; o add-on guarda apenas tokens de sessão/ativação.
+- Chave SR-PRO continua disponível em Mostrar chave / Copiar chave para suporte e recuperação.
 
 Recursos existentes:
 - Recomenda baralhos/temas para revisar hoje.

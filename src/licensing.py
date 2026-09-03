@@ -11,8 +11,8 @@ import urllib.request
 import uuid
 from typing import Any
 
-from .config import get_config
-from .constants import LICENSE_API_URL, OWNER_KEY_HASH, VERSION
+from .config import get_config, update_config
+from .constants import LEGACY_OFFICIAL_API_URL, LICENSE_API_URL, OWNER_KEY_HASH, VERSION
 from .storage import (
     clear_account_state,
     clear_checkout_state,
@@ -81,7 +81,57 @@ def _key_hash(key: str) -> str:
 
 def _api_url() -> str:
     configured = str(get_config().get("license_api_url", "")).strip().rstrip("/")
+    # v1.3.0 used the official test backend. Production builds transparently
+    # redirect that exact legacy default while still allowing custom servers.
+    if configured == LEGACY_OFFICIAL_API_URL.rstrip("/"):
+        return LICENSE_API_URL.rstrip("/")
     return configured or LICENSE_API_URL.rstrip("/")
+
+
+def migrate_environment_state() -> bool:
+    """Move a v1.3.0 test installation safely to the production backend.
+
+    Commercial account/checkout/activation tokens are environment-specific and
+    must never cross from the old test backend into production. OWNER is local
+    and is intentionally preserved. Returns True when local state changed.
+    """
+    changed = False
+    target = _api_url().rstrip("/")
+    legacy = LEGACY_OFFICIAL_API_URL.rstrip("/")
+
+    raw_configured = str(get_config().get("license_api_url", "")).strip().rstrip("/")
+    if raw_configured == legacy:
+        try:
+            update_config(license_api_url=LICENSE_API_URL)
+            changed = True
+        except Exception:
+            pass
+
+    lic = read_license_state()
+    if lic and str(lic.get("role", "")).upper() != "OWNER":
+        source = str(lic.get("source", ""))
+        server = str(lic.get("server_url", "")).strip().rstrip("/")
+        if server == legacy or (source in {"account", "server"} and not server):
+            clear_license_state()
+            changed = True
+
+    acct = read_account_state()
+    if acct:
+        server = str(acct.get("server_url", "")).strip().rstrip("/")
+        # v1.3.0 account state had no server_url and therefore belongs to the
+        # former test environment. New production sessions always store it.
+        if not server or server != target:
+            clear_account_state()
+            changed = True
+
+    checkout = read_checkout_state()
+    if checkout:
+        server = str(checkout.get("server_url", "")).strip().rstrip("/")
+        if not server or server != target:
+            clear_checkout_state()
+            changed = True
+
+    return changed
 
 
 def _optional_int(value: Any) -> int | None:
@@ -149,6 +199,7 @@ def _save_account_response(data: dict[str, Any]) -> None:
             "plan": str(data.get("plan", "")),
             "active_devices": int(data.get("active_devices") or 0),
             "max_devices": int(data.get("max_devices") or 1),
+            "server_url": _api_url(),
             "last_checked_at": _now_iso(),
         }
     )
@@ -378,6 +429,7 @@ def create_checkout(email: str | None = None) -> tuple[bool, Any]:
         "checkout_url": str(payload.get("checkout_url")), "session_token": str(payload.get("session_token")),
         "external_reference": str(payload.get("external_reference", "")), "expires_in_hours": int(payload.get("expires_in_hours", 24)),
         "created_at": _now_iso(), "status": "pending_payment", "account_email": str(acct.get("email", "")),
+        "server_url": _api_url(),
     }
     write_checkout_state(state)
     return True, state

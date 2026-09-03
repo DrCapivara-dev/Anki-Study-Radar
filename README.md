@@ -4,7 +4,16 @@
 
 Instead of changing Anki's scheduler, Study Radar adds a thematic layer on top of it: Anki/FSRS schedules individual cards, while Study Radar helps you decide which **deck or subject** deserves attention.
 
-## v1.3.0 — Conta Study Radar + 1 dispositivo
+## v1.3.1 — Production
+
+A **v1.3.1** é a primeira build pública ligada ao ambiente comercial de produção do Study Radar.
+
+### Produção
+- Backend comercial: `https://study-radar-backend-prod.onrender.com`.
+- Checkout Pro usa as credenciais de produção configuradas somente no backend.
+- O add-on nunca contém o Access Token do Mercado Pago nem segredos do servidor.
+- Ao atualizar da v1.3.0 de testes, tokens comerciais antigos são descartados localmente para evitar mistura entre teste e produção.
+- A ativação OWNER offline é preservada.
 
 The commercial flow now uses a **Study Radar account** instead of relying on a reusable license key as the primary login method.
 
@@ -35,7 +44,7 @@ The commercial flow now uses a **Study Radar account** instead of relying on a r
 Quick Review and Focus Session use Anki filtered decks in **preview mode** (`reschedule = false`). Study Radar is designed not to replace FSRS or rewrite normal card scheduling.
 
 ## Installation
-1. Download `Anki_Study_Radar_v1.3.0.ankiaddon` from Releases.
+1. Download `Anki_Study_Radar_v1.3.1_Production.ankiaddon` from Releases.
 2. Open Anki Desktop.
 3. Go to **Tools → Add-ons → Install from file**.
 4. Restart Anki.

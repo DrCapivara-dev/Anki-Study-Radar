@@ -17,6 +17,7 @@ from .licensing import (
     checkout_state,
     has_pro_access,
     license_status,
+    migrate_environment_state,
     refresh_account,
     verify_license,
 )
@@ -114,6 +115,9 @@ def _resume_license_tasks() -> None:
 def _on_profile_opened() -> None:
     try:
         from .config import get_config
+        migrated = migrate_environment_state()
+        if migrated:
+            tooltip("Study Radar atualizado para o ambiente de produção. Entre novamente na sua conta.")
         if bool(get_config().get("cleanup_temp_on_startup", True)):
             QTimer.singleShot(800, lambda: cleanup_empty_temporary_decks(announce=False))
         QTimer.singleShot(1400, _resume_license_tasks)

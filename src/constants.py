@@ -1,9 +1,10 @@
 ADDON_NAME = "Anki Study Radar"
-VERSION = "1.3.0"
+VERSION = "1.3.1"
 SMART_REVIEW_DECK_NAME = "Study Radar - Revisão Rápida"
 FOCUS_REVIEW_DECK_NAME = "Study Radar - Sessão Foco"
 TEMP_DECK_PREFIX = "Study Radar - "
-LICENSE_API_URL = "https://study-radar-backend.onrender.com"
+LICENSE_API_URL = "https://study-radar-backend-prod.onrender.com"
+LEGACY_OFFICIAL_API_URL = "https://study-radar-backend.onrender.com"
 OWNER_KEY_HASH = "f6a374eba54f440e609beba30a28b1dd825cc678c4415edfcdcd464d758c44b7"
 
 DEFAULT_CONFIG = {

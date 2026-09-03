@@ -22,7 +22,7 @@
   "exam_mode_enabled": false,
   "exam_date": "",
   "exam_intensity": 2,
-  "license_api_url": "https://study-radar-backend.onrender.com",
+  "license_api_url": "https://study-radar-backend-prod.onrender.com",
   "auto_cleanup_temp_decks": true,
   "cleanup_temp_on_startup": true
 }

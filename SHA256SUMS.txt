@@ -1,1 +1,2 @@
 0d0c088d990aae46964b429771e23097b17fa3bb051e53fd20ba0e7229ec1a75  releases/Anki_Study_Radar_v1.3.0.ankiaddon
+9e8bff57096473a989dec87db11567132a2df26d32eeef3c5970b331148eba28  releases/Anki_Study_Radar_v1.3.1_Production.ankiaddon

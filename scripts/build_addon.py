@@ -3,7 +3,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
-OUT = ROOT / "releases" / "Anki_Study_Radar_v1.3.0.ankiaddon"
+OUT = ROOT / "releases" / "Anki_Study_Radar_v1.3.1_Production.ankiaddon"
 PRIVATE_STATE = {"license_state.json", "device.json", "checkout_state.json", "account_state.json"}
 
 with zipfile.ZipFile(OUT, "w", compression=zipfile.ZIP_DEFLATED) as z:

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.1 — 2026-09-03
+- Switched the public build to the dedicated production backend.
+- Added safe migration away from the former official test backend.
+- Clears legacy test account, checkout and commercial activation tokens on upgrade while preserving OWNER.
+- New production account and checkout state records their server URL to prevent cross-environment reuse.
+- Kept account login, Lifetime Pro, one-device enforcement and SR-PRO recovery from v1.3.0.
+
 ## 1.3.0 — 2026-09-03
 - Added Study Radar account registration and login with email/password.
 - Purchases can be linked to the authenticated account.
