@@ -1,15 +1,7 @@
-Anki Study Radar v0.2.0
-=======================
+Anki Study Radar v0.3.0
 
-O Study Radar analisa o histórico de revisões e recomenda quais baralhos/temas merecem ser revisitados.
+Radar de revisão temática para o Anki.
 
-Novidades da v0.2.0
--------------------
-- Nova janela gráfica de configurações.
-- Acesso por Ferramentas > Study Radar Settings...
-- Botão de Configurações dentro do próprio Radar.
-- Edição amigável de histórico, máximo de baralhos, tamanho mínimo de sessão, horizonte futuro e intervalos de revisão.
-- Botão Restaurar padrões.
-- Não é mais necessário editar o JSON manualmente.
+Novidade v0.3.0: Smart Review / Revisão Rápida. O Radar escolhe automaticamente os cards mais problemáticos (lapsos, Again e Hard) e monta uma sessão curta em modo de pré-visualização, sem alterar o agendamento normal/FSRS.
 
-O add-on não modifica o FSRS nem o agendamento individual dos cards.
+Também inclui janela gráfica de configurações em Ferramentas > Study Radar Settings.

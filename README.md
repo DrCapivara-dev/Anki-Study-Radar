@@ -2,7 +2,7 @@
 
 **Anki Study Radar** is an add-on for Anki Desktop that analyzes your local review history and shows, directly on the deck screen, **which decks/topics may be worth revisiting today**.
 
-> Current version: **v0.2.0 (beta)**
+> Current version: **v0.3.0 (beta)**
 
 ## Why this exists
 
@@ -17,8 +17,10 @@ For example, if you studied a deck two days ago and struggled with many cards, S
 - Uses recent review history and the proportions of **Again / Hard / Good / Easy** answers.
 - Ignores very small sessions so opening a deck and answering only a few cards does not necessarily reset the thematic review.
 - Shows recommendations such as **Review today**, **Overdue**, **Tomorrow**, and **Coming soon**.
-- Includes a button to open the recommended deck.
-- Does **not** change card due dates, card states, FSRS parameters, or Anki scheduling.
+- Includes **Open** and **⚡ Quick Review** actions for recommended decks.
+- **Quick Review** automatically selects difficult cards using recent Again/Hard answers and lapse history, then creates a short preview filtered deck.
+- Shows a simple **priority score (1–100)** for each recommendation.
+- Quick Review uses Anki's filtered-deck **preview mode**, so it does **not reschedule cards or change normal FSRS intervals**.
 - Runs locally; the current version contains no network requests and does not upload the user's collection data.
 
 ## How the recommendation works
@@ -57,6 +59,7 @@ History: 730 days
 Max decks shown: 8
 Minimum session: 5 reviews
 Upcoming window: 5 days
+Quick Review size: 25 cards
 ```
 
 | Option | Meaning |
@@ -66,10 +69,11 @@ Upcoming window: 5 days
 | `max_rows` | Maximum number of decks shown in the radar. |
 | `minimum_session_reviews` | Minimum number of answers needed for a day to count as a meaningful session. |
 | `show_upcoming_days` | How many upcoming days are shown in addition to due/overdue decks. |
+| `smart_review_cards` | Maximum number of cards selected for each Quick Review session. |
 
 ## Privacy
 
-Study Radar reads information from the local Anki collection to calculate recommendations. **v0.2.0 does not contain network code or send review history to an external server.**
+Study Radar reads information from the local Anki collection to calculate recommendations. **v0.3.0 does not contain network code or send review history to an external server.**
 
 ## Status
 
@@ -77,11 +81,11 @@ This project is currently in **beta**. Feedback, bug reports, Anki version infor
 
 Planned ideas include:
 
-- Quick thematic review based on difficult cards.
-- More configurable recommendation rules.
+- Optional deck ignore list.
+- Snooze/postpone recommendations.
+- Review profiles such as Standard, Intensive and Exam mode.
 - Optional statistics/history view.
 - Improved session detection.
-- Optional statistics/history view.
 
 ## Building the `.ankiaddon`
 
@@ -105,4 +109,4 @@ Created by **DrCapivara-dev**.
 
 ## 🇧🇷 Resumo em português
 
-O **Anki Study Radar** analisa seu histórico local e mostra na tela inicial do Anki quais **baralhos/temas valem a pena revisar hoje**. Ele usa os nomes reais dos seus baralhos, considera desempenho recente e intervalos temáticos progressivos, mas **não altera o FSRS nem o agendamento dos cards**.
+O **Anki Study Radar** analisa seu histórico local e mostra na tela inicial do Anki quais **baralhos/temas valem a pena revisar hoje**. Ele usa os nomes reais dos seus baralhos, considera desempenho recente e intervalos temáticos progressivos. A **Revisão Rápida** escolhe automaticamente cards difíceis e usa modo de pré-visualização, preservando o agendamento normal/FSRS.

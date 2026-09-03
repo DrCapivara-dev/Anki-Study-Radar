@@ -24,13 +24,15 @@ from aqt.qt import (
 from aqt.utils import qconnect, showInfo, tooltip
 
 ADDON_NAME = "Anki Study Radar"
-VERSION = "0.2.0"
+VERSION = "0.3.0"
+SMART_REVIEW_DECK_NAME = "Study Radar - Revisão Rápida"
 DEFAULT_CONFIG = {
     "history_days": 730,
     "max_rows": 8,
     "minimum_session_reviews": 5,
     "base_intervals_days": [2, 4, 7, 14, 21, 30, 45, 60],
     "show_upcoming_days": 5,
+    "smart_review_cards": 25,
 }
 
 
@@ -221,6 +223,172 @@ def recommendations() -> list[Recommendation]:
     return result
 
 
+
+def _smart_review_card_ids(deck_id: int, limit: int) -> list[int]:
+    """Choose cards that are most useful for a short extra review.
+
+    This intentionally favors lapses and recent Again/Hard answers. It does not
+    change any scheduling state; the selected cards are later placed in a
+    preview filtered deck.
+    """
+    limit = max(5, min(200, int(limit)))
+    now_ms = int(time.time() * 1000)
+    recent_cutoff_ms = now_ms - 90 * 86400 * 1000
+    rows = mw.col.db.all(
+        """
+        SELECT c.id,
+               c.lapses,
+               c.reps,
+               c.factor,
+               c.ivl,
+               SUM(CASE WHEN r.ease = 1 THEN 1 ELSE 0 END) AS again_total,
+               SUM(CASE WHEN r.ease = 2 THEN 1 ELSE 0 END) AS hard_total,
+               SUM(CASE WHEN r.ease = 1 AND r.id >= ? THEN 1 ELSE 0 END) AS recent_again,
+               SUM(CASE WHEN r.ease = 2 AND r.id >= ? THEN 1 ELSE 0 END) AS recent_hard,
+               MAX(r.id) AS last_review
+        FROM cards c
+        LEFT JOIN revlog r ON r.cid = c.id AND r.ease BETWEEN 1 AND 4
+        WHERE (CASE WHEN c.odid != 0 THEN c.odid ELSE c.did END) = ?
+          AND c.queue != -1
+          AND c.reps > 0
+        GROUP BY c.id
+        """,
+        recent_cutoff_ms,
+        recent_cutoff_ms,
+        deck_id,
+    )
+
+    scored: list[tuple[float, int]] = []
+    for cid, lapses, reps, factor, ivl, again_total, hard_total, recent_again, recent_hard, last_review in rows:
+        lapses = int(lapses or 0)
+        reps = int(reps or 0)
+        factor = int(factor or 0)
+        ivl = int(ivl or 0)
+        again_total = int(again_total or 0)
+        hard_total = int(hard_total or 0)
+        recent_again = int(recent_again or 0)
+        recent_hard = int(recent_hard or 0)
+        last_review = int(last_review or 0)
+
+        days_since = (now_ms - last_review) / 86400000 if last_review else 365.0
+        low_ease_bonus = max(0.0, (2500 - factor) / 250.0) if factor > 0 else 0.0
+        # Recent failures matter most; historic lapses keep persistently difficult
+        # cards high in the list. A small age bonus helps surface stale cards.
+        score = (
+            recent_again * 16.0
+            + recent_hard * 7.0
+            + lapses * 8.0
+            + again_total * 2.5
+            + hard_total * 1.0
+            + low_ease_bonus
+            + min(days_since, 120.0) / 20.0
+            + min(ivl, 365) / 365.0
+            + min(reps, 100) / 200.0
+        )
+        scored.append((score, int(cid)))
+
+    scored.sort(key=lambda item: (-item[0], item[1]))
+    return [cid for _score, cid in scored[:limit]]
+
+
+def _existing_smart_review_deck_id() -> int:
+    try:
+        for item in mw.col.decks.all_names_and_ids(include_filtered=True):
+            if str(item.name) == SMART_REVIEW_DECK_NAME:
+                did = int(item.id)
+                try:
+                    if mw.col.decks.is_filtered(did):
+                        return did
+                except Exception:
+                    return did
+    except Exception:
+        pass
+    return 0
+
+
+def start_smart_review(deck_id: int) -> None:
+    """Build a preview filtered deck from the highest-priority cards."""
+    if not mw.col.decks.name_if_exists(deck_id):
+        showInfo("Esse baralho não existe mais.", title=ADDON_NAME)
+        return
+
+    cfg = _config()
+    limit = max(5, min(200, int(cfg.get("smart_review_cards", 25))))
+    try:
+        cids = _smart_review_card_ids(deck_id, limit)
+    except Exception as exc:
+        showInfo(f"Não foi possível selecionar os cards da revisão rápida.\n\n{exc}", title=ADDON_NAME)
+        return
+
+    if not cids:
+        showInfo(
+            "Ainda não há cards revisados suficientes nesse baralho para montar uma Revisão Rápida.",
+            title=ADDON_NAME,
+        )
+        return
+
+    try:
+        from anki.decks import DeckId, FilteredDeckConfig
+        from aqt.operations import QueryOp
+        from aqt.operations.scheduling import add_or_update_filtered_deck
+    except Exception as exc:
+        showInfo(
+            "Sua versão do Anki não oferece a API necessária para a Revisão Rápida.\n\n"
+            f"Atualize o Anki e tente novamente.\n\n{exc}",
+            title=ADDON_NAME,
+        )
+        return
+
+    existing_id = _existing_smart_review_deck_id()
+    search = "cid:" + ",".join(str(cid) for cid in cids)
+    source_name = _display_deck_name(mw.col.decks.name_if_exists(deck_id) or "Baralho")
+
+    def got_deck(deck: Any) -> None:
+        try:
+            deck.name = SMART_REVIEW_DECK_NAME
+            config = deck.config
+            config.reschedule = False
+            del config.delays[:]
+            del config.search_terms[:]
+            config.search_terms.extend(
+                [
+                    FilteredDeckConfig.SearchTerm(
+                        search=search,
+                        limit=len(cids),
+                        order=FilteredDeckConfig.SearchTerm.Order.LAPSES,
+                    )
+                ]
+            )
+            # In preview mode: Again/Hard can repeat briefly, while Good returns
+            # the card to its original deck. Normal FSRS scheduling is preserved.
+            config.preview_again_secs = 60
+            config.preview_hard_secs = 180
+            config.preview_good_secs = 0
+            deck.allow_empty = False
+
+            def built(out: Any) -> None:
+                try:
+                    new_did = int(out.id)
+                    mw.col.decks.select(new_did)
+                    mw.moveToState("overview")
+                    tooltip(f"Revisão rápida criada: {len(cids)} cards de {source_name}")
+                except Exception as exc:
+                    showInfo(f"A revisão foi criada, mas não foi possível abri-la.\n\n{exc}", title=ADDON_NAME)
+
+            add_or_update_filtered_deck(parent=mw, deck=deck).success(built).failure(
+                lambda exc: showInfo(f"Não foi possível montar a Revisão Rápida.\n\n{exc}", title=ADDON_NAME)
+            ).run_in_background()
+        except Exception as exc:
+            showInfo(f"Não foi possível configurar a Revisão Rápida.\n\n{exc}", title=ADDON_NAME)
+
+    QueryOp(
+        parent=mw,
+        op=lambda col: col.sched.get_or_create_filtered_deck(deck_id=DeckId(existing_id)),
+        success=got_deck,
+    ).failure(
+        lambda exc: showInfo(f"Não foi possível preparar a Revisão Rápida.\n\n{exc}", title=ADDON_NAME)
+    ).run_in_background()
+
 def _when_text(rec: Recommendation) -> tuple[str, str, str]:
     if rec.days_until < 0:
         n = abs(rec.days_until)
@@ -251,14 +419,17 @@ def _row_html(rec: Recommendation) -> str:
       <div class="study-radar-main">
         <div class="study-radar-name">{safe_name}</div>
         <div class="study-radar-meta">
-          Última sessão {_ago_text(rec.days_since)} · {s.reviews} respostas · Again {again_pct}% · Hard {hard_pct}%
+          Última sessão {_ago_text(rec.days_since)} · {s.reviews} respostas · Again {again_pct}% · Hard {hard_pct}% · Prioridade {rec.priority}/100
         </div>
       </div>
       <div class="study-radar-status">
         <span class="study-radar-pill {color_class}">{label}</span>
         <span class="study-radar-timing">{timing}</span>
       </div>
-      <button class="study-radar-button" onclick="pycmd('study_radar:{rec.deck_id}')">Abrir baralho</button>
+      <div class="study-radar-actions">
+        <button class="study-radar-button" onclick="pycmd('study_radar:{rec.deck_id}')">Abrir</button>
+        <button class="study-radar-button study-radar-smart" onclick="pycmd('study_radar_smart:{rec.deck_id}')">⚡ Revisão rápida</button>
+      </div>
     </div>
     """
 
@@ -320,7 +491,7 @@ def _render_radar() -> str:
       }}
       .study-radar-row {{
         display: grid;
-        grid-template-columns: minmax(260px,1fr) 170px 112px;
+        grid-template-columns: minmax(260px,1fr) 170px 220px;
         gap: 12px;
         align-items: center;
         padding: 10px 0;
@@ -334,6 +505,7 @@ def _render_radar() -> str:
       .radar-yellow {{ background: rgba(220,160,30,.17); color: #c28a13; }}
       .radar-green {{ background: rgba(45,160,95,.15); color: #32965c; }}
       .study-radar-timing {{ font-size: 11px; opacity: .65; }}
+      .study-radar-actions {{ display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap; }}
       .study-radar-button {{
         border: 1px solid rgba(90,120,220,.45);
         border-radius: 8px;
@@ -341,10 +513,12 @@ def _render_radar() -> str:
         cursor: pointer;
         font-weight: 600;
       }}
+      .study-radar-smart {{ font-weight: 700; }}
       .study-radar-empty {{ padding: 10px 0 2px 0; opacity: .65; }}
       @media (max-width: 720px) {{
         .study-radar-heading {{ flex-direction: column; }}
         .study-radar-row {{ grid-template-columns: 1fr; gap: 7px; }}
+        .study-radar-actions {{ justify-content:flex-start; }}
         .study-radar-button {{ width: max-content; }}
       }}
     </style>
@@ -447,6 +621,28 @@ class StudyRadarSettingsDialog(QDialog):
         intervals_layout.addStretch(1)
         tabs.addTab(intervals_page, "Intervalos")
 
+        # Smart Review tab
+        smart = QWidget()
+        smart_layout = QVBoxLayout(smart)
+        smart_help = QLabel(
+            "A Revisão Rápida monta uma sessão curta com os cards mais problemáticos do baralho, "
+            "priorizando lapsos e respostas Again/Hard. Ela usa modo de pré-visualização e não "
+            "altera o agendamento normal/FSRS dos cards."
+        )
+        smart_help.setWordWrap(True)
+        smart_layout.addWidget(smart_help)
+
+        smart_box = QGroupBox("Revisão Rápida")
+        smart_form = QFormLayout(smart_box)
+        self.smart_review_cards = QSpinBox()
+        self.smart_review_cards.setRange(5, 200)
+        self.smart_review_cards.setSuffix(" cards")
+        self.smart_review_cards.setToolTip("Quantidade máxima de cards escolhidos para cada Revisão Rápida.")
+        smart_form.addRow("Tamanho da sessão:", self.smart_review_cards)
+        smart_layout.addWidget(smart_box)
+        smart_layout.addStretch(1)
+        tabs.addTab(smart, "Revisão Rápida")
+
         # About tab
         about = QWidget()
         about_layout = QVBoxLayout(about)
@@ -455,8 +651,10 @@ class StudyRadarSettingsDialog(QDialog):
             "<p>O Study Radar analisa suas sessões anteriores por baralho e recomenda quando "
             "revisitar aquele tema. Respostas <b>Again</b> e <b>Hard</b> tornam a recomendação "
             "mais urgente; bom desempenho permite espaçar.</p>"
+            "<p><b>Revisão Rápida:</b> seleciona os cards mais problemáticos e os abre em um baralho "
+            "filtrado de pré-visualização, sem alterar o agendamento normal/FSRS.</p>"
             "<p><b>Importante:</b> o Radar é uma camada de organização por tema. Ele não substitui "
-            "nem modifica o agendador/FSRS do Anki.</p>"
+            "o agendador do Anki.</p>"
             f"<p>Versão {VERSION}</p>"
         )
         about_text.setWordWrap(True)
@@ -489,6 +687,9 @@ class StudyRadarSettingsDialog(QDialog):
         )
         self.show_upcoming_days.setValue(
             int(cfg.get("show_upcoming_days", DEFAULT_CONFIG["show_upcoming_days"]))
+        )
+        self.smart_review_cards.setValue(
+            int(cfg.get("smart_review_cards", DEFAULT_CONFIG["smart_review_cards"]))
         )
 
         raw = cfg.get("base_intervals_days", DEFAULT_CONFIG["base_intervals_days"])
@@ -532,6 +733,7 @@ class StudyRadarSettingsDialog(QDialog):
                 "max_rows": self.max_rows.value(),
                 "minimum_session_reviews": self.minimum_session_reviews.value(),
                 "show_upcoming_days": self.show_upcoming_days.value(),
+                "smart_review_cards": self.smart_review_cards.value(),
                 "base_intervals_days": intervals,
             }
         )
@@ -577,6 +779,14 @@ def on_deck_browser_will_render_content(deck_browser: DeckBrowser, content: Any)
 def on_js_message(handled: tuple[bool, Any], message: str, context: Any) -> tuple[bool, Any]:
     if message == "study_radar_settings":
         open_settings_dialog()
+        return (True, None)
+
+    if message.startswith("study_radar_smart:"):
+        try:
+            did = int(message.split(":", 1)[1])
+            start_smart_review(did)
+        except Exception as exc:
+            showInfo(f"Não foi possível iniciar a Revisão Rápida.\n\n{exc}", title=ADDON_NAME)
         return (True, None)
 
     if not message.startswith("study_radar:"):

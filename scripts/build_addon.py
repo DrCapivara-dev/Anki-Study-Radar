@@ -6,7 +6,7 @@ import zipfile
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "src"
 DIST = ROOT / "dist"
-VERSION = "0.1.1"
+VERSION = "0.3.0"
 OUTPUT = DIST / f"Anki_Study_Radar_v{VERSION}.ankiaddon"
 
 FILES = [

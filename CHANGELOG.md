@@ -2,6 +2,19 @@
 
 All notable changes to **Anki Study Radar** will be documented here.
 
+## [0.3.0] - 2026-09-03
+
+### Added
+- **Smart Review / Revisão Rápida** button on each recommended deck.
+- Automatic selection of the most problematic reviewed cards, prioritizing recent Again/Hard answers and historical lapses.
+- A short filtered preview session that preserves normal FSRS scheduling.
+- Configurable Smart Review size (default: 25 cards).
+- Priority score shown directly in each Radar row.
+
+### Changed
+- Recommended-deck actions are now split into **Open** and **Quick Review**.
+- Settings now include a dedicated **Quick Review** tab.
+
 ## [0.2.0] - 2026-09-03
 
 ### Added
