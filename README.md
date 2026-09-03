@@ -1,79 +1,176 @@
 # 🧠 Anki Study Radar
 
-**Anki Study Radar** helps you decide **which deck/topic to revisit today** based on your actual review history.
+**Estude o que mais precisa — na hora certa.**
 
-Instead of changing Anki's scheduler, Study Radar adds a thematic layer on top of it: Anki/FSRS schedules individual cards, while Study Radar helps you decide which **deck or subject** deserves attention.
+O **Anki Study Radar** é um add-on para Anki Desktop que analisa seu histórico de revisões e ajuda você a descobrir **quais matérias, temas e baralhos merecem mais atenção hoje**.
 
-## v1.3.1 — Production
+Enquanto o Anki organiza a revisão de cada cartão, o Study Radar ajuda você a enxergar o quadro geral dos seus estudos.
 
-A **v1.3.1** é a primeira build pública ligada ao ambiente comercial de produção do Study Radar.
+---
 
-### Produção
-- Backend comercial: `https://study-radar-backend-prod.onrender.com`.
-- Checkout Pro usa as credenciais de produção configuradas somente no backend.
-- O add-on nunca contém o Access Token do Mercado Pago nem segredos do servidor.
-- Ao atualizar da v1.3.0 de testes, tokens comerciais antigos são descartados localmente para evitar mistura entre teste e produção.
-- A ativação OWNER offline é preservada.
+## ✨ O que o Study Radar faz
 
-The commercial flow now uses a **Study Radar account** instead of relying on a reusable license key as the primary login method.
+- Identifica automaticamente seus baralhos e subbaralhos.
+- Mostra quais temas estão mais esquecidos ou precisam de reforço.
+- Calcula uma prioridade de estudo de **0 a 100**.
+- Analisa seu desempenho com:
+  - Again
+  - Hard
+  - Good
+  - Easy
+- Ajuda você a decidir **o que revisar primeiro**.
+- Organiza seus estudos sem alterar o agendamento normal do Anki.
 
-### Account system
-- Create an account with **email + password** inside the add-on.
-- Passwords are never stored by the add-on; only a revocable account session token is stored locally.
-- The backend stores only a salted **scrypt password hash**, never plaintext passwords.
-- Mercado Pago purchases are linked to the authenticated Study Radar account.
-- Once payment is approved, the account becomes **PRO Lifetime** and the current PC can be activated automatically.
-- Commercial PRO is limited to **1 active device at a time**.
-- Use **Desativar este PC** before moving the account to another computer.
-- Change password directly from the Study Radar account center.
-- The SR-PRO key remains available for support/recovery and legacy compatibility.
-- OWNER activation remains offline and unchanged.
+---
 
-### Analytics experience
-- Analytics Free remains available to everyone.
-- Analytics Pro includes overview, performance, deck-level analysis and actionable insights.
+## 🎯 Para quem é
 
-### Core features
-- Automatic deck discovery and clean subdeck names.
-- Priority score 0–100 using actual review history.
-- Again / Hard / Good / Easy analysis.
-- Quick Review, Focus Session, Exam Mode and temporary-deck cleanup.
-- Friendly graphical settings and diagnostics.
+O Study Radar é ideal para quem:
 
-## Scheduling safety
-Quick Review and Focus Session use Anki filtered decks in **preview mode** (`reschedule = false`). Study Radar is designed not to replace FSRS or rewrite normal card scheduling.
+- possui muitos baralhos no Anki;
+- estuda várias matérias ao mesmo tempo;
+- não sabe qual assunto deveria revisar naquele dia;
+- quer identificar pontos fracos com mais facilidade;
+- quer estudar de forma mais direcionada;
+- usa o Anki para provas, faculdade, residência, concursos ou estudos de longo prazo.
 
-## Installation
-1. Download `Anki_Study_Radar_v1.3.1_Production.ankiaddon` from Releases.
-2. Open Anki Desktop.
-3. Go to **Tools → Add-ons → Install from file**.
-4. Restart Anki.
+---
 
-## Configuration
-Use **Tools → Study Radar** to open the central control panel. From there, open **Configurações** or any other Study Radar tool. The normal Anki Add-ons **Config** button still opens the friendly settings window directly.
+# 🆓 Study Radar Free
 
-## Privacy
-Study Radar analyzes the local Anki collection. The OWNER license works locally. Commercial licensing sends only purchase/license/device activation data to the Study Radar backend; card contents are not sent.
+A versão gratuita já oferece os principais recursos para acompanhar seus estudos.
 
-## Important: owner key
-The private OWNER key is **not part of this repository**. Never commit or publish it.
+### Recursos
 
-## Author
+- Radar de temas prioritários
+- Análise do histórico de revisão
+- Prioridade por baralho
+- Identificação de temas que precisam de atenção
+- Estatísticas básicas
+- Analytics Free
+- Configurações personalizáveis
+- Diagnóstico do add-on
+- Organização automática de subbaralhos
+
+---
+
+# ⭐ Study Radar Pro
+
+Para quem quer uma visão mais profunda dos estudos.
+
+### Analytics Pro
+
+Tenha uma visão completa do seu desempenho:
+
+- visão geral dos estudos;
+- análise de desempenho;
+- análise por baralho;
+- tendências de revisão;
+- distribuição de Again / Hard / Good / Easy;
+- pontos fracos;
+- previsão de carga de revisão;
+- insights e recomendações.
+
+### 🧠 Revisão Inteligente
+
+O Study Radar identifica cartões e temas que merecem atenção especial e cria sessões direcionadas de revisão.
+
+### 🎯 Sessão Foco
+
+Escolha quanto tempo você tem disponível e deixe o Study Radar ajudar a selecionar o que vale mais a pena revisar naquele período.
+
+### 📝 Modo Prova
+
+Use uma data de prova para aumentar a prioridade dos temas mais importantes conforme o exame se aproxima.
+
+### 💻 Licença
+
+O Study Radar Pro possui licença **Lifetime** e pode ser utilizado em **1 computador por vez**.
+
+Caso troque de computador, basta desativar o dispositivo anterior e ativar novamente sua conta.
+
+---
+
+## 🔐 Conta Study Radar
+
+O Pro utiliza uma conta Study Radar.
+
+Você pode:
+
+- criar sua conta diretamente pelo add-on;
+- entrar com e-mail e senha;
+- comprar o Pro;
+- verificar seu plano;
+- alterar sua senha;
+- trocar o computador ativo;
+- consultar sua licença.
+
+---
+
+## 🛡️ Seu Anki continua sendo seu Anki
+
+O Study Radar foi criado para complementar o Anki.
+
+Ele **não substitui o FSRS** e não muda a lógica normal de agendamento dos seus cartões.
+
+O Anki continua decidindo **quando cada cartão deve aparecer**.
+
+O Study Radar ajuda você a decidir:
+
+> **Qual matéria ou tema merece minha atenção hoje?**
+
+---
+
+## 🔒 Privacidade
+
+O conteúdo dos seus cartões permanece no seu computador.
+
+O Study Radar utiliza seu histórico local de revisões para gerar análises e recomendações.
+
+Dados de conta, licença e ativação são utilizados apenas para funcionamento dos recursos comerciais do Study Radar Pro.
+
+---
+
+## 💻 Compatibilidade
+
+Atualmente disponível para:
+
+**Anki Desktop**
+
+O Study Radar não funciona como add-on no AnkiMobile ou AnkiDroid.
+
+---
+
+## 📥 Instalação
+
+1. Vá até **Releases** neste repositório.
+2. Baixe o arquivo mais recente `.ankiaddon`.
+3. Abra o Anki Desktop.
+4. Vá em:
+
+   **Ferramentas → Complementos → Instalar a partir de arquivo**
+
+5. Selecione o arquivo baixado.
+6. Reinicie o Anki.
+
+Depois abra:
+
+**Ferramentas → Study Radar**
+
+---
+
+## 🚀 Comece a estudar com mais direção
+
+Em vez de olhar para dezenas de baralhos e pensar:
+
+> “O que eu deveria estudar agora?”
+
+deixe o Study Radar mostrar onde sua atenção pode fazer mais diferença.
+
+---
+
+## 👨‍💻 Desenvolvedor
+
 **DrCapivara-dev**
 
-Feedback and bug reports are welcome.
-
-
-## Conta, compra e ativação integrada
-
-A partir da **v1.2.0**, o Study Radar Pro pode ser comprado diretamente pelo add-on. O Anki solicita ao backend uma sessão do Checkout Pro do Mercado Pago, abre o checkout no navegador, acompanha o pagamento e, quando aprovado, ativa automaticamente a licença neste computador.
-
-- Checkout criado pelo backend; o Access Token do Mercado Pago nunca fica no add-on.
-- Compra pendente é retomada automaticamente ao reabrir o Anki.
-- A conta PRO comercial permite 1 dispositivo ativo por vez.
-- Após a ativação, a chave SR-PRO não é mantida localmente; o add-on guarda apenas o token de ativação.
-- A licença OWNER privada continua compatível.
-
-
-### Chave comercial
-Depois da ativação, clientes PRO podem abrir **Study Radar Pro → Sua licença → Mostrar chave / Copiar chave** para guardar a licença e usar em suporte/recuperação. A chave reutilizável não precisa ficar salva permanentemente em texto simples no estado local do add-on.
+Sugestões, feedbacks e relatos de bugs são bem-vindos.
