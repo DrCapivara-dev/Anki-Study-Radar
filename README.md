@@ -2,7 +2,7 @@
 
 **Anki Study Radar** is an add-on for Anki Desktop that analyzes your local review history and shows, directly on the deck screen, **which decks/topics may be worth revisiting today**.
 
-> Current version: **v0.1.1 (beta)**
+> Current version: **v0.2.0 (beta)**
 
 ## Why this exists
 
@@ -43,20 +43,20 @@ This is a **heuristic study-planning tool**, not a scientifically validated forg
 
 ## Configuration
 
-Open:
+Open the friendly settings window from:
 
-**Tools → Add-ons → Anki Study Radar → Config**
+**Tools → Study Radar Settings...**
 
-Default configuration:
+You can also click **⚙ Settings** directly inside the Radar. No manual JSON editing is required.
 
-```json
-{
-  "base_intervals_days": [2, 4, 7, 14, 21, 30, 45, 60],
-  "history_days": 730,
-  "max_rows": 8,
-  "minimum_session_reviews": 5,
-  "show_upcoming_days": 5
-}
+Default values remain:
+
+```text
+Intervals: 2 → 4 → 7 → 14 → 21 → 30 → 45 → 60 days
+History: 730 days
+Max decks shown: 8
+Minimum session: 5 reviews
+Upcoming window: 5 days
 ```
 
 | Option | Meaning |
@@ -69,7 +69,7 @@ Default configuration:
 
 ## Privacy
 
-Study Radar reads information from the local Anki collection to calculate recommendations. **v0.1.1 does not contain network code or send review history to an external server.**
+Study Radar reads information from the local Anki collection to calculate recommendations. **v0.2.0 does not contain network code or send review history to an external server.**
 
 ## Status
 
@@ -79,6 +79,7 @@ Planned ideas include:
 
 - Quick thematic review based on difficult cards.
 - More configurable recommendation rules.
+- Optional statistics/history view.
 - Improved session detection.
 - Optional statistics/history view.
 
@@ -98,7 +99,7 @@ The source is published for transparency and personal testing. **It is not relea
 
 ## Author
 
-Created by **[YOUR NAME OR GITHUB USERNAME]**.
+Created by **DrCapivara-dev**.
 
 ---
 

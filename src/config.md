@@ -1,5 +1,15 @@
 # Anki Study Radar — configurações
 
+A partir da versão 0.2.0, você **não precisa editar este JSON manualmente**.
+
+Abra no Anki:
+
+**Ferramentas → Study Radar Settings...**
+
+Ou clique no botão **⚙ Configurações** dentro do próprio Radar.
+
+## Opções
+
 - `history_days`: quantos dias de histórico o radar analisa.
 - `max_rows`: máximo de baralhos mostrados na tela inicial.
 - `minimum_session_reviews`: número mínimo de respostas no dia para considerar uma sessão válida. Em baralhos menores, o limite é reduzido automaticamente ao número de cards existentes.

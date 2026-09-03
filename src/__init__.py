@@ -3,15 +3,28 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 from html import escape
-import math
 import time
 from typing import Any
 
 from aqt import gui_hooks, mw
 from aqt.deckbrowser import DeckBrowser
-from aqt.utils import showInfo, tooltip
+from aqt.qt import (
+    QAction,
+    QDialog,
+    QFormLayout,
+    QGroupBox,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSpinBox,
+    QTabWidget,
+    QVBoxLayout,
+    QWidget,
+)
+from aqt.utils import qconnect, showInfo, tooltip
 
 ADDON_NAME = "Anki Study Radar"
+VERSION = "0.2.0"
 DEFAULT_CONFIG = {
     "history_days": 730,
     "max_rows": 8,
@@ -144,7 +157,7 @@ def _recommended_interval(session_count: int, session: Session, cfg: dict[str, A
         intervals = list(DEFAULT_CONFIG["base_intervals_days"])
     base = intervals[min(max(session_count - 1, 0), len(intervals) - 1)]
     adjusted = round(base * _performance_modifier(session))
-    return max(1, min(90, adjusted))
+    return max(1, min(730, adjusted))
 
 
 def _priority(days_until: int, session: Session) -> int:
@@ -294,8 +307,17 @@ def _render_radar() -> str:
         background: rgba(128,128,128,.06);
         box-sizing: border-box;
       }}
+      .study-radar-heading {{ display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }}
       .study-radar-title {{ font-size: 19px; font-weight: 700; margin-bottom: 2px; }}
       .study-radar-subtitle {{ opacity: .78; margin-bottom: 12px; line-height: 1.35; }}
+      .study-radar-settings {{
+        border: 1px solid rgba(128,128,128,.3);
+        border-radius: 8px;
+        padding: 5px 9px;
+        cursor: pointer;
+        font-size: 12px;
+        white-space: nowrap;
+      }}
       .study-radar-row {{
         display: grid;
         grid-template-columns: minmax(260px,1fr) 170px 112px;
@@ -321,16 +343,230 @@ def _render_radar() -> str:
       }}
       .study-radar-empty {{ padding: 10px 0 2px 0; opacity: .65; }}
       @media (max-width: 720px) {{
+        .study-radar-heading {{ flex-direction: column; }}
         .study-radar-row {{ grid-template-columns: 1fr; gap: 7px; }}
         .study-radar-button {{ width: max-content; }}
       }}
     </style>
     <div class="study-radar-card">
-      <div class="study-radar-title">🧠 {headline}</div>
-      <div class="study-radar-subtitle">{subtitle}</div>
+      <div class="study-radar-heading">
+        <div>
+          <div class="study-radar-title">🧠 {headline}</div>
+          <div class="study-radar-subtitle">{subtitle}</div>
+        </div>
+        <button class="study-radar-settings" onclick="pycmd('study_radar_settings')">⚙ Configurações</button>
+      </div>
       {rows}
     </div>
     """
+
+
+class StudyRadarSettingsDialog(QDialog):
+    """Friendly GUI for editing Study Radar's config.json-backed settings."""
+
+    def __init__(self) -> None:
+        super().__init__(mw)
+        self.setWindowTitle(f"{ADDON_NAME} — Configurações")
+        self.setMinimumWidth(590)
+        self.setMinimumHeight(500)
+        self.setModal(False)
+
+        root = QVBoxLayout(self)
+
+        title = QLabel(f"<h2 style='margin-bottom:2px'>🧠 {ADDON_NAME}</h2><div>Configurações de revisão temática · v{VERSION}</div>")
+        title.setWordWrap(True)
+        root.addWidget(title)
+
+        tabs = QTabWidget()
+        root.addWidget(tabs, 1)
+
+        # General tab
+        general = QWidget()
+        general_layout = QVBoxLayout(general)
+        intro = QLabel(
+            "Ajuste como o Radar escolhe e exibe os baralhos recomendados. "
+            "Essas opções não alteram o FSRS nem os intervalos individuais dos cards."
+        )
+        intro.setWordWrap(True)
+        general_layout.addWidget(intro)
+
+        general_box = QGroupBox("Comportamento do Radar")
+        form = QFormLayout(general_box)
+
+        self.history_days = QSpinBox()
+        self.history_days.setRange(30, 3650)
+        self.history_days.setSuffix(" dias")
+        self.history_days.setToolTip("Quantos dias do seu histórico de revisões o Radar pode analisar.")
+        form.addRow("Histórico analisado:", self.history_days)
+
+        self.max_rows = QSpinBox()
+        self.max_rows.setRange(1, 50)
+        self.max_rows.setSuffix(" baralhos")
+        self.max_rows.setToolTip("Número máximo de baralhos mostrados no Radar da tela inicial.")
+        form.addRow("Máximo exibido:", self.max_rows)
+
+        self.minimum_session_reviews = QSpinBox()
+        self.minimum_session_reviews.setRange(1, 500)
+        self.minimum_session_reviews.setSuffix(" cards")
+        self.minimum_session_reviews.setToolTip(
+            "Mínimo de respostas no mesmo baralho e no mesmo dia para considerar uma sessão válida."
+        )
+        form.addRow("Sessão válida a partir de:", self.minimum_session_reviews)
+
+        self.show_upcoming_days = QSpinBox()
+        self.show_upcoming_days.setRange(0, 90)
+        self.show_upcoming_days.setSuffix(" dias")
+        self.show_upcoming_days.setToolTip("Quantos dias futuros de recomendações também devem aparecer.")
+        form.addRow("Mostrar próximas revisões:", self.show_upcoming_days)
+
+        general_layout.addWidget(general_box)
+        general_layout.addStretch(1)
+        tabs.addTab(general, "Geral")
+
+        # Intervals tab
+        intervals_page = QWidget()
+        intervals_layout = QVBoxLayout(intervals_page)
+        interval_help = QLabel(
+            "Intervalos-base entre as revisões do baralho. O desempenho da última sessão pode "
+            "encurtar ou aumentar levemente o intervalo automaticamente."
+        )
+        interval_help.setWordWrap(True)
+        intervals_layout.addWidget(interval_help)
+
+        interval_box = QGroupBox("Intervalos de revisão")
+        interval_form = QFormLayout(interval_box)
+        self.interval_boxes: list[QSpinBox] = []
+        for index in range(len(DEFAULT_CONFIG["base_intervals_days"])):
+            spin = QSpinBox()
+            spin.setRange(1, 730)
+            spin.setSuffix(" dias")
+            spin.setToolTip(f"Intervalo-base após a {index + 1}ª sessão válida deste baralho.")
+            self.interval_boxes.append(spin)
+            interval_form.addRow(f"Após a {index + 1}ª sessão:", spin)
+        intervals_layout.addWidget(interval_box)
+        intervals_layout.addStretch(1)
+        tabs.addTab(intervals_page, "Intervalos")
+
+        # About tab
+        about = QWidget()
+        about_layout = QVBoxLayout(about)
+        about_text = QLabel(
+            "<h3>Como funciona?</h3>"
+            "<p>O Study Radar analisa suas sessões anteriores por baralho e recomenda quando "
+            "revisitar aquele tema. Respostas <b>Again</b> e <b>Hard</b> tornam a recomendação "
+            "mais urgente; bom desempenho permite espaçar.</p>"
+            "<p><b>Importante:</b> o Radar é uma camada de organização por tema. Ele não substitui "
+            "nem modifica o agendador/FSRS do Anki.</p>"
+            f"<p>Versão {VERSION}</p>"
+        )
+        about_text.setWordWrap(True)
+        about_layout.addWidget(about_text)
+        about_layout.addStretch(1)
+        tabs.addTab(about, "Sobre")
+
+        buttons = QHBoxLayout()
+        self.reset_button = QPushButton("Restaurar padrões")
+        self.close_button = QPushButton("Cancelar")
+        self.save_button = QPushButton("Salvar")
+        self.save_button.setDefault(True)
+        buttons.addWidget(self.reset_button)
+        buttons.addStretch(1)
+        buttons.addWidget(self.close_button)
+        buttons.addWidget(self.save_button)
+        root.addLayout(buttons)
+
+        qconnect(self.reset_button.clicked, self._load_defaults)
+        qconnect(self.close_button.clicked, self.close)
+        qconnect(self.save_button.clicked, self._save)
+
+        self._load_current()
+
+    def _apply_values(self, cfg: dict[str, Any]) -> None:
+        self.history_days.setValue(int(cfg.get("history_days", DEFAULT_CONFIG["history_days"])))
+        self.max_rows.setValue(int(cfg.get("max_rows", DEFAULT_CONFIG["max_rows"])))
+        self.minimum_session_reviews.setValue(
+            int(cfg.get("minimum_session_reviews", DEFAULT_CONFIG["minimum_session_reviews"]))
+        )
+        self.show_upcoming_days.setValue(
+            int(cfg.get("show_upcoming_days", DEFAULT_CONFIG["show_upcoming_days"]))
+        )
+
+        raw = cfg.get("base_intervals_days", DEFAULT_CONFIG["base_intervals_days"])
+        values = []
+        try:
+            values = [int(v) for v in raw]
+        except Exception:
+            values = []
+        if not values:
+            values = list(DEFAULT_CONFIG["base_intervals_days"])
+        while len(values) < len(self.interval_boxes):
+            values.append(values[-1])
+        for spin, value in zip(self.interval_boxes, values):
+            spin.setValue(max(1, min(730, int(value))))
+
+    def _load_current(self) -> None:
+        self._apply_values(_config())
+
+    def _load_defaults(self) -> None:
+        self._apply_values(DEFAULT_CONFIG)
+        tooltip("Valores padrão carregados. Clique em Salvar para aplicar.")
+
+    def _save(self) -> None:
+        intervals = [spin.value() for spin in self.interval_boxes]
+        if any(next_value < current for current, next_value in zip(intervals, intervals[1:])):
+            showInfo(
+                "Os intervalos não podem diminuir de uma etapa para a seguinte.\n\n"
+                "Exemplo válido: 2, 4, 7, 14, 21...",
+                title=ADDON_NAME,
+            )
+            return
+
+        # Preserve any future/unknown keys that may already exist.
+        try:
+            cfg = mw.addonManager.getConfig(__name__) or {}
+        except Exception:
+            cfg = {}
+        cfg.update(
+            {
+                "history_days": self.history_days.value(),
+                "max_rows": self.max_rows.value(),
+                "minimum_session_reviews": self.minimum_session_reviews.value(),
+                "show_upcoming_days": self.show_upcoming_days.value(),
+                "base_intervals_days": intervals,
+            }
+        )
+
+        try:
+            mw.addonManager.writeConfig(__name__, cfg)
+        except Exception as exc:
+            showInfo(f"Não foi possível salvar as configurações.\n\n{exc}", title=ADDON_NAME)
+            return
+
+        tooltip("Configurações do Study Radar salvas")
+        try:
+            if getattr(mw, "state", "") == "deckBrowser":
+                mw.deckBrowser.refresh()
+        except Exception:
+            pass
+        self.close()
+
+
+def open_settings_dialog() -> None:
+    """Open or focus the friendly Study Radar settings window."""
+    existing = getattr(mw, "_study_radar_settings_dialog", None)
+    try:
+        if existing is not None and existing.isVisible():
+            existing.raise_()
+            existing.activateWindow()
+            return
+    except Exception:
+        pass
+
+    dialog = StudyRadarSettingsDialog()
+    mw._study_radar_settings_dialog = dialog
+    dialog.show()
+    dialog.raise_()
+    dialog.activateWindow()
 
 
 def on_deck_browser_will_render_content(deck_browser: DeckBrowser, content: Any) -> None:
@@ -339,6 +575,10 @@ def on_deck_browser_will_render_content(deck_browser: DeckBrowser, content: Any)
 
 
 def on_js_message(handled: tuple[bool, Any], message: str, context: Any) -> tuple[bool, Any]:
+    if message == "study_radar_settings":
+        open_settings_dialog()
+        return (True, None)
+
     if not message.startswith("study_radar:"):
         return handled
 
@@ -355,5 +595,11 @@ def on_js_message(handled: tuple[bool, Any], message: str, context: Any) -> tupl
     return (True, None)
 
 
+# Hooks used by the Radar itself.
 gui_hooks.deck_browser_will_render_content.append(on_deck_browser_will_render_content)
 gui_hooks.webview_did_receive_js_message.append(on_js_message)
+
+# Friendly settings shortcut under Anki's Tools menu.
+settings_action = QAction("Study Radar Settings...", mw)
+qconnect(settings_action.triggered, open_settings_dialog)
+mw.form.menuTools.addAction(settings_action)

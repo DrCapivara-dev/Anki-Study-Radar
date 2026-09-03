@@ -2,6 +2,20 @@
 
 All notable changes to **Anki Study Radar** will be documented here.
 
+## [0.2.0] - 2026-09-03
+
+### Added
+- Friendly graphical settings window.
+- **Tools → Study Radar Settings...** menu shortcut.
+- **⚙ Settings** button directly inside the Radar.
+- Editable review intervals with spin boxes instead of manual JSON editing.
+- Friendly controls for history window, maximum displayed decks, minimum session size and upcoming-review window.
+- **Restore defaults** button.
+
+### Changed
+- The configuration can now be managed without editing JSON manually.
+- The thematic interval ceiling now supports longer user-defined intervals (up to 730 days).
+
 ## [0.1.1] - 2026-09-02
 
 ### Changed
