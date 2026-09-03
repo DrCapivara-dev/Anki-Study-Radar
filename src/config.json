@@ -1,7 +1,7 @@
 {
   "history_days": 730,
-  "max_rows": 8,
-  "minimum_session_reviews": 5,
+  "max_rows": 10,
+  "minimum_session_reviews": 10,
   "base_intervals_days": [
     2,
     4,
@@ -12,6 +12,17 @@
     45,
     60
   ],
-  "show_upcoming_days": 5,
-  "smart_review_cards": 25
+  "show_upcoming_days": 7,
+  "smart_review_cards": 25,
+  "display_deck_names": "full",
+  "ignored_deck_ids": [],
+  "snoozed_until": {},
+  "show_reasons": true,
+  "focus_avg_seconds_per_card": 30,
+  "exam_mode_enabled": false,
+  "exam_date": "",
+  "exam_intensity": 2,
+  "license_api_url": "https://study-radar-backend.onrender.com",
+  "auto_cleanup_temp_decks": true,
+  "cleanup_temp_on_startup": true
 }

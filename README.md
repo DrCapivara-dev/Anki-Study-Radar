@@ -1,112 +1,70 @@
 # 🧠 Anki Study Radar
 
-**Anki Study Radar** is an add-on for Anki Desktop that analyzes your local review history and shows, directly on the deck screen, **which decks/topics may be worth revisiting today**.
+**Anki Study Radar** helps you decide **which deck/topic to revisit today** based on your actual review history.
 
-> Current version: **v0.3.0 (beta)**
+Instead of changing Anki's scheduler, Study Radar adds a thematic layer on top of it: Anki/FSRS schedules individual cards, while Study Radar helps you decide which **deck or subject** deserves attention.
 
-## Why this exists
+## v1.3.0 — Conta Study Radar + 1 dispositivo
 
-Anki/FSRS is excellent at deciding when an **individual card** should reappear. Study Radar adds a different layer: it helps answer **“which topic/deck should I revisit today?”**.
+The commercial flow now uses a **Study Radar account** instead of relying on a reusable license key as the primary login method.
 
-For example, if you studied a deck two days ago and struggled with many cards, Study Radar may recommend revisiting that deck sooner. If repeated sessions go well, the thematic review interval gradually expands.
+### Account system
+- Create an account with **email + password** inside the add-on.
+- Passwords are never stored by the add-on; only a revocable account session token is stored locally.
+- The backend stores only a salted **scrypt password hash**, never plaintext passwords.
+- Mercado Pago purchases are linked to the authenticated Study Radar account.
+- Once payment is approved, the account becomes **PRO Lifetime** and the current PC can be activated automatically.
+- Commercial PRO is limited to **1 active device at a time**.
+- Use **Desativar este PC** before moving the account to another computer.
+- Change password directly from the Study Radar account center.
+- The SR-PRO key remains available for support/recovery and legacy compatibility.
+- OWNER activation remains offline and unchanged.
 
-## Features
+### Analytics experience
+- Analytics Free remains available to everyone.
+- Analytics Pro includes overview, performance, deck-level analysis and actionable insights.
 
-- Reads the user's **actual deck names automatically** — no predefined subjects.
-- Supports nested Anki decks and displays them cleanly, e.g. `Medicine › Psychiatry › Psychosis` instead of `Medicine::Psychiatry::Psychosis`.
-- Uses recent review history and the proportions of **Again / Hard / Good / Easy** answers.
-- Ignores very small sessions so opening a deck and answering only a few cards does not necessarily reset the thematic review.
-- Shows recommendations such as **Review today**, **Overdue**, **Tomorrow**, and **Coming soon**.
-- Includes **Open** and **⚡ Quick Review** actions for recommended decks.
-- **Quick Review** automatically selects difficult cards using recent Again/Hard answers and lapse history, then creates a short preview filtered deck.
-- Shows a simple **priority score (1–100)** for each recommendation.
-- Quick Review uses Anki's filtered-deck **preview mode**, so it does **not reschedule cards or change normal FSRS intervals**.
-- Runs locally; the current version contains no network requests and does not upload the user's collection data.
+### Core features
+- Automatic deck discovery and clean subdeck names.
+- Priority score 0–100 using actual review history.
+- Again / Hard / Good / Easy analysis.
+- Quick Review, Focus Session, Exam Mode and temporary-deck cleanup.
+- Friendly graphical settings and diagnostics.
 
-## How the recommendation works
-
-The default thematic intervals are:
-
-`2 → 4 → 7 → 14 → 21 → 30 → 45 → 60 days`
-
-The interval is adjusted using the most recent meaningful session. More **Again/Hard** answers can shorten the recommendation interval; very strong performance can increase it slightly.
-
-This is a **heuristic study-planning tool**, not a scientifically validated forgetting-curve model and not a replacement for FSRS.
+## Scheduling safety
+Quick Review and Focus Session use Anki filtered decks in **preview mode** (`reschedule = false`). Study Radar is designed not to replace FSRS or rewrite normal card scheduling.
 
 ## Installation
-
-1. Download the latest `.ankiaddon` file from the `releases/` folder or from the GitHub Releases page.
-2. Open **Anki Desktop**.
-3. Go to **Tools → Add-ons**.
-4. Choose **Install from file** and select the `.ankiaddon` file.
-5. Restart Anki.
-
-> Add-ons of this type are intended for **Anki Desktop**. They are not installed directly in AnkiMobile or AnkiDroid.
+1. Download `Anki_Study_Radar_v1.3.0.ankiaddon` from Releases.
+2. Open Anki Desktop.
+3. Go to **Tools → Add-ons → Install from file**.
+4. Restart Anki.
 
 ## Configuration
-
-Open the friendly settings window from:
-
-**Tools → Study Radar Settings...**
-
-You can also click **⚙ Settings** directly inside the Radar. No manual JSON editing is required.
-
-Default values remain:
-
-```text
-Intervals: 2 → 4 → 7 → 14 → 21 → 30 → 45 → 60 days
-History: 730 days
-Max decks shown: 8
-Minimum session: 5 reviews
-Upcoming window: 5 days
-Quick Review size: 25 cards
-```
-
-| Option | Meaning |
-| --- | --- |
-| `base_intervals_days` | Base sequence of thematic review intervals, in days. |
-| `history_days` | How far back Study Radar looks in the local review history. |
-| `max_rows` | Maximum number of decks shown in the radar. |
-| `minimum_session_reviews` | Minimum number of answers needed for a day to count as a meaningful session. |
-| `show_upcoming_days` | How many upcoming days are shown in addition to due/overdue decks. |
-| `smart_review_cards` | Maximum number of cards selected for each Quick Review session. |
+Use **Tools → Study Radar** to open the central control panel. From there, open **Configurações** or any other Study Radar tool. The normal Anki Add-ons **Config** button still opens the friendly settings window directly.
 
 ## Privacy
+Study Radar analyzes the local Anki collection. The OWNER license works locally. Commercial licensing sends only purchase/license/device activation data to the Study Radar backend; card contents are not sent.
 
-Study Radar reads information from the local Anki collection to calculate recommendations. **v0.3.0 does not contain network code or send review history to an external server.**
-
-## Status
-
-This project is currently in **beta**. Feedback, bug reports, Anki version information, and screenshots are welcome.
-
-Planned ideas include:
-
-- Optional deck ignore list.
-- Snooze/postpone recommendations.
-- Review profiles such as Standard, Intensive and Exam mode.
-- Optional statistics/history view.
-- Improved session detection.
-
-## Building the `.ankiaddon`
-
-With Python installed:
-
-```bash
-python scripts/build_addon.py
-```
-
-The generated package will be placed in `dist/`.
-
-## License / reuse
-
-The source is published for transparency and personal testing. **It is not released under an open-source license.** Redistribution, republishing, selling, or presenting modified copies as another project is not permitted without the copyright holder's permission. See [`LICENSE`](LICENSE).
+## Important: owner key
+The private OWNER key is **not part of this repository**. Never commit or publish it.
 
 ## Author
+**DrCapivara-dev**
 
-Created by **DrCapivara-dev**.
+Feedback and bug reports are welcome.
 
----
 
-## 🇧🇷 Resumo em português
+## Conta, compra e ativação integrada
 
-O **Anki Study Radar** analisa seu histórico local e mostra na tela inicial do Anki quais **baralhos/temas valem a pena revisar hoje**. Ele usa os nomes reais dos seus baralhos, considera desempenho recente e intervalos temáticos progressivos. A **Revisão Rápida** escolhe automaticamente cards difíceis e usa modo de pré-visualização, preservando o agendamento normal/FSRS.
+A partir da **v1.2.0**, o Study Radar Pro pode ser comprado diretamente pelo add-on. O Anki solicita ao backend uma sessão do Checkout Pro do Mercado Pago, abre o checkout no navegador, acompanha o pagamento e, quando aprovado, ativa automaticamente a licença neste computador.
+
+- Checkout criado pelo backend; o Access Token do Mercado Pago nunca fica no add-on.
+- Compra pendente é retomada automaticamente ao reabrir o Anki.
+- A conta PRO comercial permite 1 dispositivo ativo por vez.
+- Após a ativação, a chave SR-PRO não é mantida localmente; o add-on guarda apenas o token de ativação.
+- A licença OWNER privada continua compatível.
+
+
+### Chave comercial
+Depois da ativação, clientes PRO podem abrir **Study Radar Pro → Sua licença → Mostrar chave / Copiar chave** para guardar a licença e usar em suporte/recuperação. A chave reutilizável não precisa ficar salva permanentemente em texto simples no estado local do add-on.

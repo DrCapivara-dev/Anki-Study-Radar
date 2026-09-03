@@ -1,12 +1,7 @@
-# Security Policy
+# Security
 
-If you discover a security or privacy issue in Anki Study Radar, please avoid posting sensitive details publicly at first.
+Please do not publish license keys, Mercado Pago access tokens, webhook secrets, database credentials, or other private credentials in issues or commits.
 
-Contact the project owner through the contact method listed on their GitHub profile and include:
+The OWNER test key must remain private and is intentionally excluded from this repository.
 
-- Study Radar version.
-- Anki version.
-- Operating system.
-- Steps needed to reproduce the issue.
-
-The current v0.1.1 release is designed to work locally and contains no intentional network requests.
+For security reports, contact the project owner privately instead of opening a public issue when disclosure could expose credentials or licensing weaknesses.
